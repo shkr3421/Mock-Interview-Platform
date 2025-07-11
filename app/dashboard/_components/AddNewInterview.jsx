@@ -35,14 +35,21 @@ const AddNewInterview = () => {
   const onSubmit = async (e) => {
     setLoading(true);
     e.preventDefault();
-    console.log(jobPosition, jobDesc, jobExperience);
+
+    // ✅ Validation check
+    const experience = parseInt(jobExperience);
+    if (isNaN(experience) || experience < 0) {
+      alert("Please enter a valid non-negative number for experience.");
+      setLoading(false);
+      return;
+    }
 
     const InputPrompt = `
-  Job Positions: ${jobPosition}, 
-  Job Description: ${jobDesc}, 
-  Years of Experience: ${jobExperience}. 
-  Based on this information, please provide 5 interview questions with answers in JSON format, ensuring "Question" and "Answer" are fields in the JSON.
-`;
+      Job Positions: ${jobPosition}, 
+      Job Description: ${jobDesc}, 
+      Years of Experience: ${experience}. 
+      Based on this information, please provide 5 interview questions with answers in JSON format, ensuring "Question" and "Answer" are fields in the JSON.
+    `;
 
     const result = await chatSession.sendMessage(InputPrompt);
     const MockJsonResp = result.response
@@ -50,8 +57,7 @@ const AddNewInterview = () => {
       .replace("```json", "")
       .replace("```", "")
       .trim();
-    console.log(JSON.parse(MockJsonResp));
-    // const parsedResp = MockJsonResp
+
     setJsonResponse(MockJsonResp);
 
     if (MockJsonResp) {
@@ -62,13 +68,11 @@ const AddNewInterview = () => {
           jsonMockResp: MockJsonResp,
           jobPosition: jobPosition,
           jobDesc: jobDesc,
-          jobExperience: jobExperience,
+          jobExperience: experience,
           createdBy: user?.primaryEmailAddress?.emailAddress,
           createdAt: moment().format("YYYY-MM-DD"),
         })
         .returning({ mockId: MockInterview.mockId });
-        
-      console.log("Inserted ID:", resp);
 
       if (resp) {
         setOpenDialog(false);
@@ -77,6 +81,7 @@ const AddNewInterview = () => {
     } else {
       console.log("ERROR");
     }
+
     setLoading(false);
   };
 
@@ -127,8 +132,9 @@ const AddNewInterview = () => {
                     <Input
                       className="mt-1"
                       placeholder="Ex. 5"
-                      max="50"
                       type="number"
+                      min="0" // ✅ Prevents negative input
+                      max="50"
                       required
                       onChange={(e) => setJobExperience(e.target.value)}
                     />
